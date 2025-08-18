@@ -1,7 +1,7 @@
 FROM ubuntu:24.04
 
 # Update Repo dan Install SSH server
-RUN apt-update && apt-install openssh-server -y
+RUN apt-get update && apt-get install -y openssh-server
 # Menambahkan direktori /run/sshd
 RUN mkdir -p /run/sshd
 # Membuat user non-root

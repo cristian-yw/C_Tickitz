@@ -1,4 +1,4 @@
-body {
+.bodyp {
     margin: 0;
     padding: 0;
     background: url('/login.png') no-repeat center center fixed;
@@ -57,9 +57,6 @@ body {
     text-align: left;
 }
 
-p {
-    color: rgb(102, 100, 100);
-}
 
 .center {
     color: rgb(102, 100, 100);

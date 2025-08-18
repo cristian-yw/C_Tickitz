@@ -1,53 +1,103 @@
-import React from 'react';
-import "tailwindcss";
+import { Link } from "react-router-dom";
 
 
 function Footer() {
+  const exploreList = [
+    { text: "Cinemas", link: "cinema" },
+    { text: "Movies List", link: "/" },
+    { text: "My Ticket", link: "/" },
+    { text: "Notification", link: "/" },
+  ];
+
+  const sponsorList = [
+    { text: "ebv.id", src: "/ebv.id 2.png" },
+    { text: "CineOne21", src: "/CineOne21 2.png" },
+    { text: "hiflix", src: "/hiflix_2.png" },
+  ];
+
+  const followUsList = [
+    {
+      text: "Tickitz Cinema.id",
+      link: "facebook.com",
+      src: "/eva_facebook-outline.png",
+    },
+
+    {
+      text: "tickitz.id",
+      link: "instagram.com",
+      src: "/bx_bxl-instagram.png",
+    },
+
+    {
+      text: "tickitz.id",
+      link: "x.com",
+      src: "/eva_twitter-outline.png",
+    },
+
+    {
+      text: "Tickitz Cinema id",
+      link: "youtube.com",
+      src: "/feather_youtube.png",
+    },
+  ];
+
   return (
-    <footer className="borde p-6 text-sm text-gray-600 font-sans text-left">
-      <div className="max-w-xs mx-auto flex flex-col gap-10 py-8">
-        <div>
-          <img src="/Vector.png" alt="Tickitz Logo" className="mb-3" />
-          <p>Stop waiting in line. Buy tickets conveniently, watch movies quietly.</p>
-        </div>
+    <footer className="flex flex-col gap-10">
+      <div className="flex flex-col gap-10 justify-evenly md:flex-row">
+        {/* Slogan */}
+        <span className="font-light text-[#6E7191] text-sm">
+          <img src="/Vector copy.png" alt="" />
+          <div>Stop waiting in line. Buy tickets</div>
+          <div>conveniently, watch movies quietly.</div>
+        </span>
 
-        <div>
-          <h3 className="text-gray-900 font-semibold mb-3">Explore</h3>
-          <div>
-            <ol className="grid grid-cols-3 gap-3">
-            <a href="#" className="hover:text-indigo-600">Cinemas</a>
-            <a href="#" className="hover:text-indigo-600">Movies List</a>
-            <a href="#" className="hover:text-indigo-600">Notification</a>
-            <a href="#" className="hover:text-indigo-600">My Ticket</a>
-            </ol>
-          </div>
-        </div>
+        {/* Explore Link */}
+        <span>
+          <div className="font-medium text-base">Explore</div>
+          <ul className="grid grid-cols-3 md:grid-cols-1">
+            {exploreList.map((el, idx) => {
+              return (
+                <li className="text-sm text-[#6E7191]" key={idx}>
+                  <Link to={el.link}>{el.text}</Link>
+                </li>
+              );
+            })}
+          </ul>
+        </span>
 
-        {/* Sponsor */}
-        <div>
-          <h3 className="text-gray-900 font-semibold mb-3">Our Sponsor</h3>
-          <div className="flex gap-6 items-center">
-            <img src="/image.png" alt="EBV.id" className="h-5" />
-            <img src="/CineOne21 2.png" alt="CineOne21" className="h-5" />
-            <img src="/hiflix 2.png" alt="Hiflix" className="h-5" />
-          </div>
-        </div>
+        {/* Sponsor List */}
+        <span>
+          <div className="font-medium text-base">Our Sponsor</div>
+          <ul className="grid grid-cols-3 md:grid-cols-1">
+            {sponsorList.map((el, idx) => {
+              return (
+                <li key={idx}>
+                  <img src={el.src} alt={el.text} />
+                </li>
+              );
+            })}
+          </ul>
+        </span>
 
-        {/* Social Media */}
-        <div>
-          <h3 className="text-gray-900 font-semibold mb-3">Follow us</h3>
-          <div className="flex gap-6 text-xl">
-            <a href="#" className="hover:text-indigo-600"><i className="fab fa-facebook-f"></i></a>
-            <a href="#" className="hover:text-indigo-600"><i className="fab fa-instagram"></i></a>
-            <a href="#" className="hover:text-indigo-600"><i className="fab fa-twitter"></i></a>
-            <a href="#" className="hover:text-indigo-600"><i className="fab fa-youtube"></i></a>
-          </div>
-        </div>
+        {/* Follow Us */}
+        <span>
+          <div className="font-medium text-base">Follow us</div>
+          <ul className="grid grid-cols-4  md:grid-cols-1">
+            {followUsList.map((el, idx) => {
+              return (
+                <li key={idx}>
+                  <a className="flex gap-6" href={el.link}>
+                    <img src={el.src} alt="Youtube" />
+                    <span className="hidden md:inline ">{el.text}</span>
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        </span>
       </div>
 
-      <div className="text-center border-t pt-5 text-gray-500 text-xs">
-        © 2020 Tickitz. All Rights Reserved.
-      </div>
+      <div className="text-[#6E7191]">© 2020 Tickitz. All Rights Reserved.</div>
     </footer>
   );
 }

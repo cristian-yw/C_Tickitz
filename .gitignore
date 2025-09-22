@@ -12,7 +12,7 @@ dist
 dist-ssr
 nginx
 *.local
-Week7/ce_ecsda
+ce_ecsda
 
 # Editor directories and files
 .vscode/*

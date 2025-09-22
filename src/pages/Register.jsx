@@ -1,24 +1,26 @@
-import React, { useRef, useState, useContext } from "react";
+import React, { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../Context/AuthContext";
 
 function Register() {
   const formRef = useRef(null);
   const errorRef = useRef(null);
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const { registerUser } = useContext(AuthContext);
+  const [successMessage, setSuccessMessage] = useState("");
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    setSuccessMessage("");
+    errorRef.current.innerHTML = "";
 
+    // ambil nilai input dari form
     const email = formRef.current.email.value.trim();
     const password = formRef.current.password.value.trim();
     const agree = formRef.current.term.checked;
-    let errors = [];
 
-    const emailptrn = /@.*\./;
-    if (!email.match(emailptrn)) errors.push("Email tidak valid");
+    // validasi sederhana
+    const errors = [];
+    if (!email.match(/@.*\./)) errors.push("Email tidak valid");
     if (password.length < 8) errors.push("Password minimal 8 karakter");
     if (!/[a-z]/.test(password))
       errors.push("Password harus mengandung huruf kecil");
@@ -28,12 +30,29 @@ function Register() {
 
     if (errors.length > 0) {
       errorRef.current.innerHTML = errors.join("<br>");
-    } else {
-      errorRef.current.innerHTML =
-        "<span class='text-green-500'>Pendaftaran berhasil!</span>";
-      registerUser(email, password);
+      return;
+    }
+
+    // kirim data ke backend Gin
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BE_HOST}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        errorRef.current.innerHTML = errData.error || "Pendaftaran gagal";
+        return;
+      }
+
+      const data = await res.json(); // { message: "User registered successfully" }
+      setSuccessMessage(data.message || "Pendaftaran berhasil!");
       formRef.current.reset();
-      setTimeout(() => navigate("/signin"), 1000);
+      setTimeout(() => navigate("/login"), 1000);
+    } catch (err) {
+      errorRef.current.innerHTML = "Terjadi kesalahan koneksi";
     }
   };
 
@@ -106,7 +125,10 @@ function Register() {
             />
           </div>
 
-          <div ref={errorRef} className="text-red-500 text-sm mt-2 mb-4"></div>
+          <div ref={errorRef} className="text-red-500 text-sm mt-2 mb-2"></div>
+          {successMessage && (
+            <p className="text-green-500 text-sm mb-2">{successMessage}</p>
+          )}
 
           <div className="flex items-center mt-2 mb-4">
             <input type="checkbox" name="term" id="term" className="mr-2" />

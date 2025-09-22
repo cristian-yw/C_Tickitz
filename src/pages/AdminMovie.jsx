@@ -1,130 +1,110 @@
-import { useState } from "react";
-import {
-  Search,
-  User,
-  ChevronDown,
-  Eye,
-  Edit2,
-  Trash2,
-  Plus,
-  X,
-} from "lucide-react";
+import { useState, useEffect } from "react";
+import { Eye, Edit2, Trash2, Plus, X } from "lucide-react";
+import { apiFetch } from "../utils/apiFetch";
 
 const AdminMovie = () => {
-  // --- Form State ---
   const emptyForm = {
     title: "",
-    category: "",
+    genre: "",
     release: "",
-    duration: "",
     hours: "",
     minutes: "",
     director: "",
     cast: "",
     synopsis: "",
-    location: "",
     scheduleDate: "",
-    scheduleTime: "08:30am",
+    scheduleTime: "08:30",
+    cinema: "",
+    location: "",
+    price: "",
+    posterFile: null,
+    backdropFile: null,
     thumbnail: "/api/placeholder/60/60",
   };
 
   const [form, setForm] = useState(emptyForm);
-
-  // --- Movie Data ---
-  const [filmList, setFilmList] = useState([
-    {
-      id: 1,
-      thumbnail: "/Rectangle 119.png",
-      title: "Spiderman HomeComing",
-      category: "Action, Adventure",
-      release: "2023-05-07",
-      duration: "2 Hours 15 Minute",
-    },
-    {
-      id: 2,
-      thumbnail: "/Rectangle 140.png",
-      title: "Black Widow",
-      category: "Action, Adventure",
-      release: "2023-06-10",
-      duration: "2 Hours 15 Minute",
-    },
-    {
-      id: 3,
-      thumbnail: "/Rectangle 119.png",
-      title: "Spiderman HomeComing",
-      category: "Action, Adventure",
-      release: "2023-03-02",
-      duration: "2 Hours 15 Minute",
-    },
-    {
-      id: 4,
-      thumbnail: "/Rectangle 140.png",
-      title: "Black Widow",
-      category: "Action, Adventure",
-      release: "2023-09-01",
-      duration: "2 Hours 15 Minute",
-    },
-    {
-      id: 5,
-      thumbnail: "/Rectangle 119.png",
-      title: "Spiderman HomeComing",
-      category: "Action, Adventure",
-      release: "2023-08-07",
-      duration: "2 Hours 15 Minute",
-    },
-  ]);
-
-  // --- UI State ---
+  const [filmList, setFilmList] = useState([]);
+  const [genres, setGenres] = useState([]);
+  const [cinemas, setCinemas] = useState([]);
+  const [locations, setLocations] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedFilm, setSelectedFilm] = useState(null);
   const [pageNow, setPageNow] = useState(1);
-  const [selectedMonth, setSelectedMonth] = useState("November 2023");
-  const [dropdownMonth, setDropdownMonth] = useState(false);
 
-  // --- Month Options ---
-  const months = [
-    "January 2023",
-    "February 2023",
-    "March 2023",
-    "April 2023",
-    "May 2023",
-    "June 2023",
-    "July 2023",
-    "August 2023",
-    "September 2023",
-    "October 2023",
-    "November 2023",
-    "December 2023",
-  ];
-
-  // --- Pagination ---
   const perPage = 5;
   const totalPage = Math.ceil(filmList.length / perPage);
   const startIdx = (pageNow - 1) * perPage;
   const pageData = filmList.slice(startIdx, startIdx + perPage);
 
-  // --- Handlers ---
+  useEffect(() => {
+    apiFetch("/genres").then((data) => setGenres(data || []));
+    apiFetch("/cinemas").then((data) => setCinemas(data || []));
+    apiFetch("/locations").then((data) => setLocations(data || []));
+    apiFetch("/movies/all").then((data) => {
+      if (data && Array.isArray(data)) {
+        const formatted = data.map((m) => ({
+          ...m,
+          duration: m.runtime
+            ? `${Math.floor(m.runtime / 60)} Hours ${m.runtime % 60} Minute`
+            : "0 Hours 0 Minute",
+          thumbnail: m.poster_path
+            ? `http://localhost:8080/uploads/poster${m.poster_path.replace(
+                /\\/g,
+                "/"
+              )}`
+            : "/api/placeholder/60/60",
+          backdropThumbnail: m.backdrop_path
+            ? `http://localhost:8080/uploads/backdrop${m.backdrop_path.replace(
+                /\\/g,
+                "/"
+              )}`
+            : "/api/placeholder/300/150",
+          cast: m.casts || [],
+          genre: m.genres ? m.genres.join(", ") : "-", // ambil array genres
+          release: m.release_date || "-", // ambil release_date
+        }));
+        setFilmList(formatted);
+      }
+    });
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleFileChange = (e, type) => {
+    if (e.target.files && e.target.files[0]) {
+      setForm((prev) => ({
+        ...prev,
+        [type]: e.target.files[0],
+        thumbnail:
+          type === "posterFile"
+            ? URL.createObjectURL(e.target.files[0])
+            : prev.thumbnail,
+      }));
+    }
+  };
+
   const openModal = (film = null) => {
     if (film) {
-      const parts = film.duration.match(/(\d+)\s*Hours?\s*(\d+)\s*Minutes?/i);
+      const parts = film.duration?.match(/(\d+)\s*Hours?\s*(\d+)\s*Minute/i);
       setForm({
         title: film.title,
-        category: film.category,
+        genre: film.category,
         release: film.release,
         hours: parts ? parts[1] : "",
         minutes: parts ? parts[2] : "",
-        duration: film.duration,
         director: film.director || "",
-        cast: film.cast || "",
+        cast: film.cast ? film.cast.map((c) => c.name).join(",") : "",
         synopsis: film.synopsis || "",
-        location: film.location || "",
         scheduleDate: film.scheduleDate || "",
-        scheduleTime: film.scheduleTime || "08:30am",
+        scheduleTime: film.scheduleTime || "08:30",
+        cinema: film.cinema || "",
+        location: film.location || "",
+        price: film.price || "",
+        posterFile: null,
+        backdropFile: null,
         thumbnail: film.thumbnail,
       });
       setSelectedFilm(film);
@@ -135,10 +115,10 @@ const AdminMovie = () => {
     setIsModalOpen(true);
   };
 
-  const saveFilm = () => {
+  const saveFilm = async () => {
     if (
       !form.title ||
-      !form.category ||
+      !form.genre ||
       !form.release ||
       !form.hours ||
       !form.minutes
@@ -147,22 +127,66 @@ const AdminMovie = () => {
       return;
     }
 
-    const durasi = `${form.hours} Hours ${form.minutes} Minute`;
-    const dataBaru = { ...form, duration: durasi };
+    const runtime = parseInt(form.hours) * 60 + parseInt(form.minutes);
 
-    if (selectedFilm) {
-      setFilmList((prev) =>
-        prev.map((f) =>
-          f.id === selectedFilm.id ? { ...dataBaru, id: f.id } : f
-        )
-      );
-    } else {
-      setFilmList((prev) => [...prev, { ...dataBaru, id: Date.now() }]);
+    const formData = new FormData();
+    formData.append("title", form.title);
+    formData.append("overview", form.synopsis);
+    formData.append("release_date", form.release);
+    formData.append("runtime", runtime);
+    formData.append("genres", form.genre);
+    if (form.posterFile) formData.append("poster", form.posterFile);
+    if (form.backdropFile) formData.append("backdrop", form.backdropFile);
+    formData.append(
+      "director",
+      JSON.stringify({ name: form.director })
+    );
+
+    const castArray = form.cast
+      .split(",")
+      .map((c) => ({ name: c.trim() }));
+    formData.append("casts", JSON.stringify(castArray));
+
+    const scheduleObj = [
+      {
+        cinema_id: parseInt(form.cinema),
+        location_id: parseInt(form.location),
+        time_id: 1,
+        date: form.scheduleDate,
+        price: parseInt(form.price),
+      },
+    ];
+    formData.append("schedules", JSON.stringify(scheduleObj));
+
+    try {
+      const res = await apiFetch("/admin/movies", {
+        method: "POST",
+        body: formData,
+      });
+      console.log(res);
+
+      const durasi = `${form.hours} Hours ${form.minutes} Minute`;
+      const dataBaru = {
+        ...form,
+        duration: durasi,
+        id: selectedFilm ? selectedFilm.id : Date.now(),
+        cast: castArray,
+      };
+
+      if (selectedFilm) {
+        setFilmList((prev) =>
+          prev.map((f) => (f.id === selectedFilm.id ? dataBaru : f))
+        );
+      } else {
+        setFilmList((prev) => [...prev, dataBaru]);
+      }
+
+      setIsModalOpen(false);
+      setSelectedFilm(null);
+      setForm(emptyForm);
+    } catch (err) {
+      console.error(err);
     }
-
-    setIsModalOpen(false);
-    setSelectedFilm(null);
-    setForm(emptyForm);
   };
 
   const deleteFilm = (id) => {
@@ -171,51 +195,20 @@ const AdminMovie = () => {
     }
   };
 
-  // --- Render ---
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-lg shadow">
-          {/* Header */}
           <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <h2 className="text-xl font-semibold">Film Management</h2>
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <button
-                  onClick={() => setDropdownMonth(!dropdownMonth)}
-                  className="flex items-center gap-2 border rounded-lg px-3 py-2 hover:bg-gray-50"
-                >
-                  <span>{selectedMonth}</span>
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-                {dropdownMonth && (
-                  <div className="absolute top-full left-0 mt-1 w-48 bg-white border rounded-lg shadow-lg z-10">
-                    {months.map((m) => (
-                      <button
-                        key={m}
-                        onClick={() => {
-                          setSelectedMonth(m);
-                          setDropdownMonth(false);
-                        }}
-                        className="w-full text-left px-3 py-2 hover:bg-gray-100"
-                      >
-                        {m}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={() => openModal()}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add Film</span>
-              </button>
-            </div>
+            <button
+              onClick={() => openModal()}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"
+            >
+              <Plus className="w-4 h-4" /> Add Film
+            </button>
           </div>
 
-          {/* Table */}
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
@@ -252,27 +245,25 @@ const AdminMovie = () => {
                     <td className="px-6 py-4 text-blue-600 font-medium">
                       {film.title}
                     </td>
-                    <td className="px-6 py-4">{film.category}</td>
+                    <td className="px-6 py-4">{film.genre}</td>
                     <td className="px-6 py-4">{film.release}</td>
                     <td className="px-6 py-4">{film.duration}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-2">
-                        <button className="bg-blue-100 text-blue-600 p-2 rounded">
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => openModal(film)}
-                          className="bg-purple-100 text-purple-600 p-2 rounded"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => deleteFilm(film.id)}
-                          className="bg-red-100 text-red-600 p-2 rounded"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                    <td className="px-6 py-4 flex gap-2">
+                      <button className="bg-blue-100 text-blue-600 p-2 rounded">
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => openModal(film)}
+                        className="bg-purple-100 text-purple-600 p-2 rounded"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => deleteFilm(film.id)}
+                        className="bg-red-100 text-red-600 p-2 rounded"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -280,7 +271,6 @@ const AdminMovie = () => {
             </table>
           </div>
 
-          {/* Pagination */}
           <div className="px-6 py-4 border-t flex justify-center gap-2">
             {Array.from({ length: totalPage }, (_, i) => i + 1).map((p) => (
               <button
@@ -299,10 +289,9 @@ const AdminMovie = () => {
         </div>
       </main>
 
-      {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg w-full max-w-2xl max-h-screen overflow-y-auto">
+          <div className="bg-white rounded-lg w-full max-w-3xl max-h-screen overflow-y-auto">
             <div className="sticky top-0 bg-white px-6 py-4 border-b flex justify-between items-center">
               <h3 className="text-xl font-semibold">
                 {selectedFilm ? "Edit Film" : "Add New Film"}
@@ -314,50 +303,81 @@ const AdminMovie = () => {
                 <X className="w-6 h-6" />
               </button>
             </div>
-
             <div className="p-6 space-y-6">
-              {/* Thumbnail */}
-              <div>
-                <label className="block text-sm font-medium mb-2">Poster</label>
-                <div className="flex items-center gap-4">
+              {/* Poster & Backdrop */}
+              <div className="flex items-center gap-4">
+                <div className="flex flex-col items-center">
                   <img
                     src={form.thumbnail}
                     alt="poster"
-                    className="w-16 h-16 rounded border object-cover"
+                    className="w-16 h-16 rounded border object-cover mb-1"
                   />
-                  <button className="bg-blue-600 text-white px-4 py-2 rounded text-sm">
-                    Upload
-                  </button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileChange(e, "posterFile")}
+                  />
+                  <span className="text-xs text-gray-500 mt-1">Poster</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <img
+                    src={
+                      form.backdropFile
+                        ? URL.createObjectURL(form.backdropFile)
+                        : "/api/placeholder/200/60"
+                    }
+                    alt="backdrop"
+                    className="w-32 h-16 rounded border object-cover mb-1"
+                  />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        backdropFile: e.target.files[0] || null,
+                      }))
+                    }
+                  />
+                  <span className="text-xs text-gray-500 mt-1">Backdrop</span>
                 </div>
               </div>
 
-              {/* Title */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Title</label>
-                <input
-                  type="text"
-                  name="title"
-                  value={form.title}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg px-3 py-2"
-                />
+              {/* Title & Genre */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Title
+                  </label>
+                  <input
+                    type="text"
+                    name="title"
+                    value={form.title}
+                    onChange={handleChange}
+                    className="w-full border rounded-lg px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Genre
+                  </label>
+                  <select
+                    name="genre"
+                    value={form.genre}
+                    onChange={handleChange}
+                    className="w-full border rounded-lg px-3 py-2"
+                  >
+                    <option value="">Select Genre</option>
+                    {genres.map((g) => (
+                      <option key={g.id} value={g.name}>
+                        {g.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              {/* Category */}
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Category
-                </label>
-                <input
-                  type="text"
-                  name="category"
-                  value={form.category}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg px-3 py-2"
-                />
-              </div>
-
-              {/* Release + Duration */}
+              {/* Release & Duration */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">
@@ -400,30 +420,32 @@ const AdminMovie = () => {
                 </div>
               </div>
 
-              {/* Director */}
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Director
-                </label>
-                <input
-                  type="text"
-                  name="director"
-                  value={form.director}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg px-3 py-2"
-                />
-              </div>
-
-              {/* Cast */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Cast</label>
-                <input
-                  type="text"
-                  name="cast"
-                  value={form.cast}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg px-3 py-2"
-                />
+              {/* Director & Cast */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Director
+                  </label>
+                  <input
+                    type="text"
+                    name="director"
+                    value={form.director}
+                    onChange={handleChange}
+                    className="w-full border rounded-lg px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Cast (comma separated)
+                  </label>
+                  <input
+                    type="text"
+                    name="cast"
+                    value={form.cast}
+                    onChange={handleChange}
+                    className="w-full border rounded-lg px-3 py-2"
+                  />
+                </div>
               </div>
 
               {/* Synopsis */}
@@ -440,49 +462,75 @@ const AdminMovie = () => {
                 />
               </div>
 
-              {/* Location */}
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Location
-                </label>
-                <input
-                  type="text"
-                  name="location"
-                  value={form.location}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg px-3 py-2"
-                />
-              </div>
-
               {/* Schedule */}
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Schedule
-                </label>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="date"
-                      name="scheduleDate"
-                      value={form.scheduleDate}
-                      onChange={handleChange}
-                      className="border rounded-lg px-3 py-2"
-                    />
-                    <span className="text-gray-500">Pick a date</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button className="w-8 h-8 border-2 border-dashed border-blue-600 rounded flex items-center justify-center text-blue-600">
-                      <Plus className="w-4 h-4" />
-                    </button>
-                    <div className="flex gap-2">
-                      <span className="bg-gray-100 px-3 py-1 rounded text-sm">
-                        08:30am
-                      </span>
-                      <span className="bg-gray-100 px-3 py-1 rounded text-sm">
-                        10:30pm
-                      </span>
-                    </div>
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Cinema
+                  </label>
+                  <select
+                    name="cinema"
+                    value={form.cinema}
+                    onChange={handleChange}
+                    className="w-full border rounded-lg px-3 py-2"
+                  >
+                    <option value="">Select Cinema</option>
+                    {cinemas.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Location
+                  </label>
+                  <select
+                    name="location"
+                    value={form.location}
+                    onChange={handleChange}
+                    className="w-full border rounded-lg px-3 py-2"
+                  >
+                    <option value="">Select Location</option>
+                    {locations.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {l.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Time</label>
+                  <input
+                    type="time"
+                    name="scheduleTime"
+                    value={form.scheduleTime}
+                    onChange={handleChange}
+                    className="w-full border rounded-lg px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Date</label>
+                  <input
+                    type="date"
+                    name="scheduleDate"
+                    value={form.scheduleDate}
+                    onChange={handleChange}
+                    className="w-full border rounded-lg px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Price
+                  </label>
+                  <input
+                    type="number"
+                    name="price"
+                    value={form.price}
+                    onChange={handleChange}
+                    className="w-full border rounded-lg px-3 py-2"
+                  />
                 </div>
               </div>
             </div>
@@ -493,7 +541,7 @@ const AdminMovie = () => {
                 onClick={saveFilm}
                 className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-medium"
               >
-                Save Film
+                {selectedFilm ? "Update Film" : "Save Film"}
               </button>
             </div>
           </div>

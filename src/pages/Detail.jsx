@@ -1,13 +1,13 @@
+// src/pages/MovieDetail.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { apiFetch } from "../utils/apiFetch";
 
 function MovieDetail() {
-  // Using useParams and useNavigate would be here in real implementation
   const { id } = useParams();
   const navigate = useNavigate();
 
   const [movie, setMovie] = useState(null);
-  const [credits, setCredits] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [bookingData, setBookingData] = useState({
@@ -17,9 +17,36 @@ function MovieDetail() {
     cinema: "CineOne21",
   });
 
-  const IMG_BASE =
-    import.meta.env.VITE_IMG_BASE || "https://image.tmdb.org/t/p/w500";
-  const API_KEY = import.meta.env.VITE_API_KEY;
+  // ----- Jadwal -----
+  const [schedules, setSchedules] = useState([]);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [scheduleError, setScheduleError] = useState(null);
+
+  const fetchSchedules = async () => {
+    try {
+      setScheduleLoading(true);
+      setScheduleError(null);
+
+      const params = new URLSearchParams({
+        cinema: bookingData.cinema,
+        location: bookingData.location,
+        date: bookingData.date,
+        start_time: bookingData.time,
+      });
+
+      const data = await apiFetch(
+        `/orders/${id}/schedules?${params.toString()}`
+      );
+      setSchedules(data);
+    } catch (err) {
+      setScheduleError(err.message);
+    } finally {
+      setScheduleLoading(false);
+    }
+  };
+
+  // Base URL backend (ubah sesuai server kamu)
+  const API_BASE_URL = "http://localhost:8080";
 
   useEffect(() => {
     async function fetchData() {
@@ -27,47 +54,34 @@ function MovieDetail() {
         setLoading(true);
         setError(null);
 
-        if (!API_KEY) {
-          throw new Error(
-            "API Key not found. Please check your environment variables."
-          );
-        }
+        const data = await apiFetch(`/orders/${id}`);
 
-        const movieResponse = await fetch(
-          `https://api.themoviedb.org/3/movie/${id}?api_key=${API_KEY}`
-        );
-        console.log("Movie Response Status:", movieResponse.status);
-        console.log("Movie Response Text:", await movieResponse.clone().text());
-        if (!movieResponse.ok) {
-          throw new Error(
-            `Failed to fetch movie data: ${movieResponse.status}`
-          );
-        }
-
-        const movieData = await movieResponse.json();
-
-        const creditsResponse = await fetch(
-          `https://api.themoviedb.org/3/movie/${id}/credits?api_key=${API_KEY}`
-        );
-
-        if (!creditsResponse.ok) {
-          throw new Error(
-            `Failed to fetch credits data: ${creditsResponse.status}`
-          );
-        }
-
-        const creditsData = await creditsResponse.json();
-
-        setMovie(movieData);
-        setCredits(creditsData);
+        setMovie({
+          ...data,
+          poster_path: data.poster_path
+            ? `${API_BASE_URL}/uploads/poster${data.poster_path.replace(
+                /\\/g,
+                "/"
+              )}`
+            : "",
+          backdrop_path: data.backdrop_path
+            ? `${API_BASE_URL}/uploads/backdrop${data.backdrop_path.replace(
+                /\\/g,
+                "/"
+              )}`
+            : "",
+          genres: data.genres || [],
+          casts: data.casts || [],
+          director: data.director || "Unknown",
+        });
       } catch (err) {
         console.error("Fetch error:", err);
         setError(err.message);
 
         const fallbackMovieData = {
           title: "Sample Movie - API Error",
-          poster_path: "/c24sv2weTHPsmDa7jEMN0m2P3RT.jpg",
-          backdrop_path: "/vc8bCGjdVp0UbMNLzHnHSLRbBWQ.jpg",
+          poster_path: "uploads/poster/sample.jpg",
+          backdrop_path: "uploads/backdrop/sample.jpg",
           genres: [
             { id: 28, name: "Action" },
             { id: 12, name: "Adventure" },
@@ -78,9 +92,6 @@ function MovieDetail() {
           vote_average: 7.4,
           overview:
             "This is sample data shown because the API call failed. Please check your API key and network connection.",
-        };
-
-        const fallbackCreditsData = {
           crew: [{ job: "Director", name: "Sample Director" }],
           cast: [
             { name: "Sample Actor 1" },
@@ -89,22 +100,18 @@ function MovieDetail() {
           ],
         };
 
+
         setMovie(fallbackMovieData);
-        setCredits(fallbackCreditsData);
       } finally {
         setLoading(false);
       }
     }
 
     fetchData();
-  }, [id, API_KEY]);
+  }, [id]);
 
-  const director = credits?.crew?.find((c) => c.job === "Director");
-  const casts =
-    credits?.cast
-      ?.slice(0, 3)
-      ?.map((c) => c.name)
-      ?.join(", ") || "N/A";
+    const director = movie?.director || "Unknown";
+    const casts = movie?.casts?.slice(0, 3).join(", ") || "N/A";
 
   const cinemas = [
     {
@@ -219,7 +226,7 @@ function MovieDetail() {
       <div className="relative w-full h-80 overflow-hidden">
         <div
           className="w-full h-full bg-cover bg-center"
-          style={{ backgroundImage: `url(${IMG_BASE}${movie.backdrop_path})` }}
+          style={{ backgroundImage: `url(${movie.backdrop_path})` }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
       </div>
@@ -230,7 +237,7 @@ function MovieDetail() {
           {/* Movie Poster */}
           <img
             className="aspect-[2/3] rounded-2xl object-cover md:w-80"
-            src={`${IMG_BASE}${movie.poster_path}`}
+            src={movie.poster_path}
             alt={movie.title}
             onError={(e) => {
               e.target.src =
@@ -245,8 +252,10 @@ function MovieDetail() {
             {/* Genres */}
             {movie.genres && (
               <ul className="flex gap-4 text-sm text-gray-600">
-                {movie.genres.map((genre) => (
-                  <li key={genre.id}>{genre.name}</li>
+                {movie.genres.map((genre, index) => (
+                  <li key={genre.id || index}>
+                    {typeof genre === "object" ? genre.name : genre}
+                  </li>
                 ))}
               </ul>
             )}
@@ -259,7 +268,7 @@ function MovieDetail() {
               </span>
               <span>
                 <div className="font-light text-[#8692A6]">Directed by</div>
-                <div className="text-black">{director?.name || "Unknown"}</div>
+                <div className="text-black">{director}</div>
               </span>
               <span>
                 <div className="font-light text-[#8692A6]">Duration</div>
@@ -366,7 +375,10 @@ function MovieDetail() {
             {/* Filter btn placeholder */}
             <span className="flex flex-col gap-2">
               <div className="invisible text-xl font-medium">Filter Button</div>
-              <button className="w-full gap-3 rounded-md bg-[#1D4ED8] px-4 py-3 text-[#F8FAFC] hover:bg-blue-700 transition-colors">
+              <button
+                onClick={fetchSchedules}
+                className="w-full gap-3 rounded-md bg-[#1D4ED8] px-4 py-3 text-[#F8FAFC] hover:bg-blue-700 transition-colors"
+              >
                 Filter
               </button>
             </span>
@@ -403,6 +415,28 @@ function MovieDetail() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* ---- Jadwal hasil filter ---- */}
+          <div className="w-full mt-6">
+            <h3 className="text-xl font-medium mb-2">Available Schedules</h3>
+            {scheduleLoading && <p>Loading schedules...</p>}
+            {scheduleError && (
+              <p className="text-red-500">Error: {scheduleError}</p>
+            )}
+            {!scheduleLoading && schedules.length === 0 && !scheduleError && (
+              <p className="text-gray-500">
+                No schedule found for this filter.
+              </p>
+            )}
+            <ul className="divide-y">
+              {schedules.map((s) => (
+                <li key={s.id} className="py-2">
+                  <span className="font-semibold">{s.cinema}</span> –{" "}
+                  {s.location} – {s.date} – {s.start_time}
+                </li>
+              ))}
+            </ul>
           </div>
 
           {/* Book Now */}

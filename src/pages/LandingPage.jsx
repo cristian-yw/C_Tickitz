@@ -4,12 +4,14 @@ import axios from "axios";
 import MovieGrids from "../components/MoviesGrid.jsx";
 
 function LandingPage() {
-  const [movies, setMovies] = useState([]);
+  const [popularMovies, setPopularMovies] = useState([]);
+  const [upcomingMovies, setUpcomingMovies] = useState([]);
   const [genreMap, setGenreMap] = useState({});
 
   useEffect(() => {
     async function fetchData() {
       try {
+        // fetch genres
         const genreRes = await axios.get(
           `${import.meta.env.VITE_BASE}/genre/movie/list?api_key=${
             import.meta.env.VITE_API_KEY
@@ -19,12 +21,21 @@ function LandingPage() {
         genreRes.data.genres.forEach((g) => (mapping[g.id] = g.name));
         setGenreMap(mapping);
 
-        const movieRes = await axios.get(
+        // fetch popular
+        const popularRes = await axios.get(
           `${import.meta.env.VITE_BASE}/movie/popular?api_key=${
             import.meta.env.VITE_API_KEY
           }`
         );
-        setMovies(movieRes.data.results);
+        setPopularMovies(popularRes.data.results);
+
+        // fetch upcoming
+        const upcomingRes = await axios.get(
+          `${import.meta.env.VITE_BASE}/movie/upcoming?api_key=${
+            import.meta.env.VITE_API_KEY
+          }`
+        );
+        setUpcomingMovies(upcomingRes.data.results);
       } catch (err) {
         console.error("Failed to fetch data", err);
       }
@@ -48,7 +59,7 @@ function LandingPage() {
           </p>
         </div>
         <section className="h-96 grid grid-cols-2 grid-rows-3 gap-2">
-          {movies.slice(0, 4).map((movie, index) => {
+          {popularMovies.slice(0, 4).map((movie, index) => {
             const posterUrl = `https://image.tmdb.org/t/p/w500${movie.poster_path}`;
             const layoutClasses = [
               "row-span-1 col-span-1 rounded-t-2xl", // posisi 1
@@ -107,7 +118,7 @@ function LandingPage() {
           Exciting Movies That Should Be Watched Today
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6"></div>
-        <MovieGrids movies={movies.slice(0, 4)} genreMap={genreMap} />
+        <MovieGrids movies={popularMovies.slice(0, 4)} genreMap={genreMap} />
       </section>
 
       {/* Upcoming Movies */}
@@ -125,7 +136,7 @@ function LandingPage() {
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-          {movies.slice(4, 8).map((movie) => (
+          {upcomingMovies.slice(4, 8).map((movie) => (
             <div key={movie.id} className="flex flex-col gap-2">
               <img
                 src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}

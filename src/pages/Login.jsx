@@ -18,45 +18,37 @@ function Login() {
     setFormState((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    setSuccessMessage("");
-    const { email, password } = formState;
+ const handleSubmit = async (event) => {
+   event.preventDefault();
+   setSuccessMessage("");
+   errorRef.current.innerHTML = "";
 
-    let errors = [];
-    const emailptrn = /@.*\./;
+   try {
+     const res = await fetch(`${import.meta.env.VITE_BE_HOST}/auth/login`, {
+       method: "POST",
+       headers: { "Content-Type": "application/json" },
+       body: JSON.stringify({
+         email: formState.email,
+         password: formState.password,
+       }),
+     });
 
-    // Cek format email
-    if (!email.match(emailptrn)) {
-      errors.push("Email tidak valid");
-    } else {
-      const registered = JSON.parse(localStorage.getItem("registeredUser"));
+     if (!res.ok) {
+       const errData = await res.json();
+       errorRef.current.innerHTML = errData.error || "Login gagal";
+       return;
+     }
 
-      if (!registered || registered.email !== email) {
-        errors.push("Email tidak terdaftar");
-      } else if (registered.password !== password) {
-        errors.push("Password anda salah");
-      }
-    }
-
-    // Validasi password
-    if (password.length < 8) errors.push("Password minimal 8 karakter");
-    if (!/[a-z]/.test(password))
-      errors.push("Password harus mengandung huruf kecil");
-    if (!/[!@#$%^&*/><]/.test(password))
-      errors.push("Password harus mengandung karakter spesial");
-
-    if (errors.length > 0) {
-      errorRef.current.innerHTML = errors.join("<br>");
-    } else {
-      errorRef.current.innerHTML = "";
-      // === UPDATE: langsung dispatch ke Redux ===
-      dispatch(login({ email }));
-      setSuccessMessage("Login berhasil!");
-      setTimeout(() => navigate("/"), 1000);
-    }
-  };
-
+     const data = await res.json();
+     // Simpan token JWT di localStorage / Redux
+     localStorage.setItem("token", data.token);
+     setSuccessMessage("Login berhasil!");
+     dispatch(login({ email: formState.email, token: data.token }));
+     setTimeout(() => navigate("/"), 1000);
+   } catch (err) {
+     errorRef.current.innerHTML = "Terjadi kesalahan koneksi";
+   }
+ };
   return (
     <div className="min-h-screen bg-[url('/login.png')] bg-no-repeat bg-center bg-fixed bg-cover flex flex-col justify-center items-center font-['Dancing_Script']">
       <div className="absolute inset-0 z-1 bg-black/40"></div>

@@ -2,8 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  fetchGenres,
-  fetchMovies,
+  fetchMovies, // gunakan thunk yang ada
   setActiveFilter,
 } from "../Redux/Slice/moviesSlice";
 import styles from "../style/home2.module.css";
@@ -18,40 +17,40 @@ function Movies({ searchPlaceholder = "Search movies..." }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentPage = parseInt(searchParams.get("page")) || 1;
 
+  // ambil nilai search & filter dari URL
   useEffect(() => {
     const searchFromUrl = searchParams.get("search") || "";
     const filterFromUrl = searchParams.get("filter") || "";
     setSearchTerm(searchFromUrl);
-    if (filterFromUrl) {
-      dispatch(setActiveFilter(filterFromUrl));
-    }
+    if (filterFromUrl) dispatch(setActiveFilter(filterFromUrl));
   }, [searchParams, dispatch]);
 
-  // Ambil genre sekali di awal
+  // ambil data film dari backend
   useEffect(() => {
-    dispatch(fetchGenres());
-  }, [dispatch]);
+    const genreId =
+      activeFilter && activeFilter !== "All"
+        ? Number(
+            Object.keys(genreMap).find((id) => genreMap[id] === activeFilter)
+          ) || 0
+        : 0;
 
-  // Ambil movies setiap kali page/search/filter berubah
-  useEffect(() => {
-    if (Object.keys(genreMap).length > 0) {
-      dispatch(fetchMovies({ page: currentPage, searchTerm, activeFilter }));
-    }
+    dispatch(
+      fetchMovies({
+        name: searchTerm,
+        genre_id: genreId, 
+        limit: 12,
+        offset: (currentPage - 1) * 12,
+      })
+    );
   }, [dispatch, currentPage, searchTerm, activeFilter, genreMap]);
 
   const handleSearch = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
     setSearchParams((params) => {
-      params.set("page", "1"); // reset ke page 1 saat search
-      if (value) {
-        params.set("search", value);
-      } else {
-        params.delete("search");
-      }
-      if (activeFilter) {
-        params.set("filter", activeFilter);
-      }
+      params.set("page", "1");
+      value ? params.set("search", value) : params.delete("search");
+      if (activeFilter) params.set("filter", activeFilter);
       return params;
     });
   };
@@ -59,15 +58,9 @@ function Movies({ searchPlaceholder = "Search movies..." }) {
   const handleFilterClick = (genre) => {
     dispatch(setActiveFilter(genre));
     setSearchParams((params) => {
-      params.set("page", "1"); // reset ke page 1 saat filter
-      if (genre) {
-        params.set("filter", genre);
-      } else {
-        params.delete("filter");
-      }
-      if (searchTerm) {
-        params.set("search", searchTerm);
-      }
+      params.set("page", "1");
+      genre ? params.set("filter", genre) : params.delete("filter");
+      if (searchTerm) params.set("search", searchTerm);
       return params;
     });
   };
@@ -85,14 +78,8 @@ function Movies({ searchPlaceholder = "Search movies..." }) {
     const maxVisible = 5;
     let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
     let end = Math.min(totalPages, start + maxVisible - 1);
-
-    if (end - start + 1 < maxVisible) {
-      start = Math.max(1, end - maxVisible + 1);
-    }
-
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
+    if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1);
+    for (let i = start; i <= end; i++) pages.push(i);
     return pages;
   };
 
@@ -161,7 +148,6 @@ function Movies({ searchPlaceholder = "Search movies..." }) {
         </div>
       </section>
 
-      {/* Loading indicator */}
       {loading && (
         <div className="text-center py-8">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -169,7 +155,6 @@ function Movies({ searchPlaceholder = "Search movies..." }) {
         </div>
       )}
 
-      {/* Results info */}
       {!loading && (
         <div className="px-4 py-2 text-gray-600">
           Page {currentPage} of {totalPages}
@@ -180,10 +165,8 @@ function Movies({ searchPlaceholder = "Search movies..." }) {
         </div>
       )}
 
-      {/* Movie Grid */}
-      {!loading && <MovieGrids movies={movies} genreMap={genreMap} />}
+      {!loading && <MovieGrids movies={movies} />}
 
-      {/* Pagination */}
       {!loading && totalPages > 1 && (
         <section className="m-5 mt-2.5 flex flex-row justify-center gap-2">
           {currentPage > 3 && (
@@ -242,7 +225,6 @@ function Movies({ searchPlaceholder = "Search movies..." }) {
         </section>
       )}
 
-      {/* No results */}
       {!loading && movies.length === 0 && (
         <div className="text-center py-8 text-gray-500">
           No movies found matching your criteria.

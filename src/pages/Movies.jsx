@@ -83,6 +83,7 @@ function Movies({ searchPlaceholder = "Search movies..." }) {
     return pages;
   };
 
+  
   return (
     <>
       {/* Hero Section */}

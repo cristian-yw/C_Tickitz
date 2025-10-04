@@ -23,20 +23,17 @@ RUN npm run build
 # Stage 2: setup app
 FROM nginx:stable-bookworm
 
-# Copy premade config
-COPY --from=builder /app/nginx/nginx.conf /etc/nginx/
-COPY --from=builder /app/nginx/sites-available/app.conf /etc/nginx/sites-available/
+# Copy konfigurasi nginx utama (opsional, kalau kamu punya custom nginx.conf)
+COPY --from=builder /app/nginx/nginx.conf /etc/nginx/nginx.conf
 
-# Create symbolic link
-RUN mkdir -p /etc/nginx/sites-enabled
-RUN ln -s /etc/nginx/sites-available/app.conf /etc/nginx/sites-enabled/
+# Gunakan lokasi default untuk konfigurasi server
+COPY --from=builder /app/nginx/sites-available/app.conf /etc/nginx/conf.d/default.conf
 
-# Copy aplikasi dari builder ke lokasi serve
-RUN mkdir -p /var/www/client
-COPY --from=builder /app/dist /var/www/client
+# Copy hasil build React/Vite ke folder web root
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Buka port untuk akses nginx
+# Buka port 80
 EXPOSE 80
 
-# Jalankan nginx di foreground
-CMD [ "nginx", "-g", "daemon off;" ]
+# Jalankan nginx
+CMD ["nginx", "-g", "daemon off;"]

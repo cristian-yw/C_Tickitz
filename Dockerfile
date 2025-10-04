@@ -15,7 +15,7 @@ COPY . .
 
 # Insert argument to environment during building image
 ARG VITE_HOST
-ENV VITE_BASE_URL=$VITE_HOST
+ENV VITE_BE_HOST=$VITE_HOST
 
 # Build dengan command vite build
 RUN npm run build

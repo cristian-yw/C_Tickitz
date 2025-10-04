@@ -1,30 +1,42 @@
-# -----------------------------
-# Build stage
-# -----------------------------
+# Stage 1: Building App
 FROM node:lts-alpine3.21 AS builder
+
+# Set working directory
 WORKDIR /app
 
-# Install dependencies
+# Copy file essensial untuk install dependency
 COPY package.json package-lock.json ./
+
+# Install package
 RUN npm ci
 
-# Copy source code
+# Copy sisanya
 COPY . .
+
+# Insert argument to environment during building image
+ARG VITE_HOST
+ENV VITE_BASE_URL=$VITE_HOST
+
+# Build dengan command vite build
 RUN npm run build
 
-# -----------------------------
-# Production stage
-# -----------------------------
-FROM nginx:stable
+# Stage 2: setup app
+FROM nginx:stable-bookworm
 
-# Copy site config ke conf.d (default nginx.conf sudah include mime.types)
-COPY nginx/sites-available/app.conf /etc/nginx/conf.d/app.conf
+# Copy premade config
+COPY --from=builder /app/nginx/nginx.conf /etc/nginx/
+COPY --from=builder /app/nginx/sites-available/app.conf /etc/nginx/sites-available/
 
-# Copy hasil build Vite ke folder HTML Nginx
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Create symbolic link
+RUN mkdir -p /etc/nginx/sites-enabled
+RUN ln -s /etc/nginx/sites-available/app.conf /etc/nginx/sites-enabled/
 
-# Expose port
+# Copy aplikasi dari builder ke lokasi serve
+RUN mkdir -p /var/www/client
+COPY --from=builder /app/dist /var/www/client
+
+# Buka port untuk akses nginx
 EXPOSE 80
 
-# Start Nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Jalankan nginx di foreground
+CMD [ "nginx", "-g", "daemon off;" ]

@@ -5,7 +5,7 @@ import axios from "axios";
 export const fetchMovies = createAsyncThunk(
   "movies/fetchMovies",
   async (params) => {
-    const res = await axios.get("http://localhost:8080/movies/filter", {
+    const res = await axios.get("http://backend:8080/movies/filter", {
       params,
     });
     return {

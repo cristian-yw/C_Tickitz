@@ -1,4 +1,4 @@
-// Fully TailwindCSS-based LandingPage.jsx
+// Updated LandingPage.jsx - Using your own backend API
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import MovieGrids from "../components/MoviesGrid.jsx";
@@ -11,31 +11,25 @@ function LandingPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        // fetch genres
-        const genreRes = await axios.get(
-          `${import.meta.env.VITE_BASE}/genre/movie/list?api_key=${
-            import.meta.env.VITE_API_KEY
-          }`
-        );
+        // Fetch genres from your backend
+        const genreRes = await axios.get("/api/genres");
         const mapping = {};
-        genreRes.data.genres.forEach((g) => (mapping[g.id] = g.name));
+
+        // Check if response has the expected structure
+        const genres = genreRes.data?.genres || genreRes.data || [];
+        genres.forEach((g) => (mapping[g.id] = g.name));
         setGenreMap(mapping);
 
-        // fetch popular
-        const popularRes = await axios.get(
-          `${import.meta.env.VITE_BASE}/movie/popular?api_key=${
-            import.meta.env.VITE_API_KEY
-          }`
-        );
-        setPopularMovies(popularRes.data.results);
+        // Fetch popular movies from your backend
+        const popularRes = await axios.get("/api/movies/popular");
+        const popularData = popularRes.data?.results || popularRes.data || [];
+        setPopularMovies(popularData);
 
-        // fetch upcoming
-        const upcomingRes = await axios.get(
-          `${import.meta.env.VITE_BASE}/movie/upcoming?api_key=${
-            import.meta.env.VITE_API_KEY
-          }`
-        );
-        setUpcomingMovies(upcomingRes.data.results);
+        // Fetch upcoming movies from your backend
+        const upcomingRes = await axios.get("/api/movies/upcoming");
+        const upcomingData =
+          upcomingRes.data?.results || upcomingRes.data || [];
+        setUpcomingMovies(upcomingData);
       } catch (err) {
         console.error("Failed to fetch data", err);
       }
@@ -60,12 +54,16 @@ function LandingPage() {
         </div>
         <section className="h-96 grid grid-cols-2 grid-rows-3 gap-2">
           {popularMovies.slice(0, 4).map((movie, index) => {
-            const posterUrl = `https://image.tmdb.org/t/p/w500${movie.poster_path}`;
+            // Update poster URL to use your backend
+            const posterUrl = movie.poster_path?.startsWith("http")
+              ? movie.poster_path
+              : `/api/uploads/${movie.poster_path}`;
+
             const layoutClasses = [
-              "row-span-1 col-span-1 rounded-t-2xl", // posisi 1
-              "row-span-2 col-span-1 row-start-1 row-end-3 col-start-2 rounded-t-2xl", // posisi 2
-              "row-span-2 col-span-1 row-start-2 col-start-1 rounded-b-2xl", // posisi 3
-              "row-span-1 col-span-1 row-start-3 col-start-2 rounded-b-2xl", // posisi 4
+              "row-span-1 col-span-1 rounded-t-2xl",
+              "row-span-2 col-span-1 row-start-1 row-end-3 col-start-2 rounded-t-2xl",
+              "row-span-2 col-span-1 row-start-2 col-start-1 rounded-b-2xl",
+              "row-span-1 col-span-1 row-start-3 col-start-2 rounded-b-2xl",
             ];
             return (
               <img
@@ -136,22 +134,29 @@ function LandingPage() {
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-          {upcomingMovies.slice(4, 8).map((movie) => (
-            <div key={movie.id} className="flex flex-col gap-2">
-              <img
-                src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                alt={movie.title}
-                className="rounded-lg w-full h-72 object-cover"
-              />
-              <h3 className="text-lg font-semibold">{movie.title}</h3>
-              <p className="text-sm text-[#1D4ED8]">Coming Soon</p>
-              <ul className="text-sm text-gray-500 flex flex-wrap gap-2">
-                {movie.genre_ids.map((id) => (
-                  <li key={id}>{genreMap[id]}</li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          {upcomingMovies.slice(4, 8).map((movie) => {
+            // Update poster URL to use your backend
+            const posterUrl = movie.poster_path?.startsWith("http")
+              ? movie.poster_path
+              : `/api/uploads/${movie.poster_path}`;
+
+            return (
+              <div key={movie.id} className="flex flex-col gap-2">
+                <img
+                  src={posterUrl}
+                  alt={movie.title}
+                  className="rounded-lg w-full h-72 object-cover"
+                />
+                <h3 className="text-lg font-semibold">{movie.title}</h3>
+                <p className="text-sm text-[#1D4ED8]">Coming Soon</p>
+                <ul className="text-sm text-gray-500 flex flex-wrap gap-2">
+                  {movie.genre_ids?.map((id) => (
+                    <li key={id}>{genreMap[id]}</li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
         </div>
       </section>
 

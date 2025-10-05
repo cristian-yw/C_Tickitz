@@ -57,7 +57,7 @@ function LandingPage() {
             // Update poster URL to use your backend
             const posterUrl = movie.poster_path?.startsWith("http")
               ? movie.poster_path
-              : `/uploads/${movie.poster_path}`;
+              : `/uploads/poster/${movie.poster_path}`;
 
             const layoutClasses = [
               "row-span-1 col-span-1 rounded-t-2xl",
@@ -138,7 +138,7 @@ function LandingPage() {
             // Update poster URL to use your backend
             const posterUrl = movie.poster_path?.startsWith("http")
               ? movie.poster_path
-              : `/api/uploads/${movie.poster_path}`;
+              : `/api/uploads/poster/${movie.poster_path}`;
 
             return (
               <div key={movie.id} className="flex flex-col gap-2">

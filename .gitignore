@@ -24,3 +24,5 @@ ce_ecsda
 *.sln
 *.sw?
 .env
+nginx/mime.types
+nginx/sites-enabled/app.conf

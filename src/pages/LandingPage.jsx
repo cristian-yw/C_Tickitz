@@ -21,7 +21,7 @@ function LandingPage() {
         setGenreMap(mapping);
 
         // Fetch popular movies from your backend
-        const popularRes = await axios.get("/api/movies/popular");
+        const popularRes = await axios.get("/api/movies/all");
         const popularData = popularRes.data?.results || popularRes.data || [];
         setPopularMovies(popularData);
 

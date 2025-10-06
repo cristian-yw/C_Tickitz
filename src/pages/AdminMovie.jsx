@@ -37,10 +37,10 @@ const AdminMovie = () => {
   const pageData = filmList.slice(startIdx, startIdx + perPage);
 
   useEffect(() => {
-    apiFetch("/genres").then((data) => setGenres(data || []));
-    apiFetch("/cinemas").then((data) => setCinemas(data || []));
-    apiFetch("/locations").then((data) => setLocations(data || []));
-    apiFetch("/movies/all").then((data) => {
+    apiFetch("/api/genres").then((data) => setGenres(data || []));
+    apiFetch("/api/cinemas").then((data) => setCinemas(data || []));
+    apiFetch("/api/locations").then((data) => setLocations(data || []));
+    apiFetch("/api/movies/all").then((data) => {
       if (data && Array.isArray(data)) {
         const formatted = data.map((m) => ({
           ...m,

@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   fetchMovies, // gunakan thunk yang ada
   setActiveFilter,
+  fetchGenres,
 } from "../Redux/Slice/moviesSlice";
 import styles from "../style/home2.module.css";
 import MovieGrids from "../components/MoviesGrid.jsx";
@@ -18,6 +19,10 @@ function Movies({ searchPlaceholder = "Search movies..." }) {
   const currentPage = parseInt(searchParams.get("page")) || 1;
 
     console.log("genreList:", genreList);
+
+  useEffect(() => {
+    dispatch(fetchGenres());
+  }, [dispatch]);
 
   // ambil nilai search & filter dari URL
   useEffect(() => {

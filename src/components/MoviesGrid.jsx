@@ -2,7 +2,9 @@ import React from "react";
 import { Link } from "react-router-dom";
 
 function MovieGrids({ movies = [] }) {
-  const BE_HOST = import.meta.env.VITE_BE_HOST; // contoh: http://localhost:8080
+  const BE_HOST = import.meta.env.VITE_BE_HOST; // contoh: http://localhost:808
+
+  console.log(movies);
 
   return (
     <section

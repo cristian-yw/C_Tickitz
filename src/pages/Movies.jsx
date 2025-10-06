@@ -17,6 +17,8 @@ function Movies({ searchPlaceholder = "Search movies..." }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentPage = parseInt(searchParams.get("page")) || 1;
 
+    console.log("genreList:", genreList);
+
   // ambil nilai search & filter dari URL
   useEffect(() => {
     const searchFromUrl = searchParams.get("search") || "";

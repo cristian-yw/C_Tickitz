@@ -9,7 +9,7 @@ export async function apiFetch(url, options = {}) {
   };
 
   try {
-    const res = await fetch(`http://backend:8080${url}`, {
+    const res = await fetch(`http://localhost${url}`, {
       ...options,
       headers,
     });

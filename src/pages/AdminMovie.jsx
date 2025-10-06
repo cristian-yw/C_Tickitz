@@ -48,13 +48,13 @@ const AdminMovie = () => {
             ? `${Math.floor(m.runtime / 60)} Hours ${m.runtime % 60} Minute`
             : "0 Hours 0 Minute",
           thumbnail: m.poster_path
-            ? `http://backend:8080/uploads/poster${m.poster_path.replace(
+            ? `http://localhost/uploads/poster${m.poster_path.replace(
                 /\\/g,
                 "/"
               )}`
             : "/api/placeholder/60/60",
           backdropThumbnail: m.backdrop_path
-            ? `http://backend:8080/uploads/backdrop${m.backdrop_path.replace(
+            ? `http://localhost/uploads/backdrop${m.backdrop_path.replace(
                 /\\/g,
                 "/"
               )}`

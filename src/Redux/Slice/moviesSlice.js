@@ -25,11 +25,13 @@ const moviesSlice = createSlice({
   initialState: {
     movies: [],
     loading: false,
+    genreList: [], 
+    genreMap: {}, 
+    activeFilter: "All", 
     totalPages: 1,
     error: null,
   },
   reducers: {
-    // <== reducer yang tadi belum ada
     setActiveFilter: (state, action) => {
       state.activeFilter = action.payload;
     },
